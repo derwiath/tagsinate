@@ -6,17 +6,17 @@ use std::{fs, io};
 
 #[derive(Debug)]
 pub struct Job {
-    path: PathBuf,
-    recurse: bool,
-    languages: Option<String>,
-    extras: Option<String>,
+    pub path: PathBuf,
+    pub recurse: bool,
+    pub languages: Option<String>,
+    pub extras: Option<String>,
 }
 
 #[derive(Debug)]
 pub struct Config {
-    binary: PathBuf,
-    output_file: PathBuf,
-    jobs: Vec<Job>,
+    pub binary: PathBuf,
+    pub output_file: PathBuf,
+    pub jobs: Vec<Job>,
 }
 
 pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, ()> {
