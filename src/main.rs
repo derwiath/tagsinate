@@ -38,6 +38,9 @@ impl fmt::Display for ErrorKind {
 }
 
 fn find_config_file(config_filename: &Path) -> io::Result<PathBuf> {
+    if config_filename.is_file() {
+        return Ok(config_filename.to_owned());
+    }
     let mut directory = env::current_dir()?;
     loop {
         let candidate = directory.join(&config_filename);
