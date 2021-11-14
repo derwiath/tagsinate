@@ -1,7 +1,8 @@
 use clap::{App, Arg};
+use std::path::{Path, PathBuf};
 
 pub struct Config {
-    pub config_file: String,
+    pub config_file: PathBuf,
 }
 
 pub fn parse_args() -> Config {
@@ -46,7 +47,7 @@ Generate tags based on a config file
             )
             .get_matches();
 
-        let config_file = matches.value_of("config-file").unwrap().to_owned();
+        let config_file = Path::new(matches.value_of("config-file").unwrap()).to_owned();
 
         Config { config_file }
     }
