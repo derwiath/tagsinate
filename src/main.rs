@@ -1,3 +1,8 @@
+extern crate clap;
+
+mod config;
+
 fn main() {
-    println!("Hello, world!");
+    let config = config::parse_args();
+    println!("Hello, world! {}", config.config_file);
 }
