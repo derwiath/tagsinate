@@ -4,10 +4,12 @@ use std::{env, fmt, io};
 extern crate clap;
 
 mod args;
+mod config;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum ErrorKind {
     ConfigFileNotFound,
+    FailedToParseConfigFile,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -56,7 +58,7 @@ fn find_config_file(config_filename: &Path) -> io::Result<PathBuf> {
 
 fn main() -> Result<(), Error> {
     let args = args::parse();
-    let config_file = match find_config_file(&args.config_file) {
+    let config_file: PathBuf = match find_config_file(&args.config_file) {
         Ok(config_file) => config_file,
         Err(_) => {
             eprintln!("Failed to find config file {}", args.config_file.display());
@@ -64,6 +66,16 @@ fn main() -> Result<(), Error> {
         }
     };
     println!("Using {}", config_file.display());
+
+    let config = match config::parse(&config_file) {
+        Ok(config) => config,
+        Err(_) => {
+            eprintln!("Failed to parse config file {}", config_file.display());
+            return Err(Error::new(ErrorKind::FailedToParseConfigFile));
+        }
+    };
+
+    println!("{:?}", config);
 
     return Ok(());
 }
