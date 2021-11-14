@@ -1,0 +1,17 @@
+{
+    "binary": "ctags.exe",
+    "languages": "C++,C#,Python",
+    "output-file": "tags",
+    "extras": "fq",
+    "recurse": "true",
+    "paths": [
+      "Game/Source",
+      "Game/Intermediate/Build/Win64/GameEditor/Inc"
+    ],
+    "overridePaths": [
+        {
+          "path": "Engine/Source",
+          "exclude": "Engine/Source/ThirdParty"
+        }
+    ]
+}
