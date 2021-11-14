@@ -3,7 +3,7 @@ use std::{env, fmt, io};
 
 extern crate clap;
 
-mod config;
+mod args;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum ErrorKind {
@@ -52,14 +52,11 @@ fn find_config_file(config_filename: &Path) -> io::Result<PathBuf> {
 }
 
 fn main() -> Result<(), Error> {
-    let config = config::parse_args();
-    let config_file = match find_config_file(&config.config_file) {
+    let args = args::parse();
+    let config_file = match find_config_file(&args.config_file) {
         Ok(config_file) => config_file,
         Err(_) => {
-            eprintln!(
-                "Failed to find config file {}",
-                config.config_file.display()
-            );
+            eprintln!("Failed to find config file {}", args.config_file.display());
             return Err(Error::new(ErrorKind::ConfigFileNotFound));
         }
     };

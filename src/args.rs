@@ -1,12 +1,12 @@
 use clap::{App, Arg};
 use std::path::{Path, PathBuf};
 
-pub struct Config {
+pub struct Args {
     pub config_file: PathBuf,
 }
 
-pub fn parse_args() -> Config {
-    Config::new()
+pub fn parse() -> Args {
+    Args::new()
 }
 
 struct CargoPackage {
@@ -25,8 +25,8 @@ impl CargoPackage {
     }
 }
 
-impl Config {
-    fn new() -> Config {
+impl Args {
+    fn new() -> Args {
         let package = CargoPackage::new();
         let matches = App::new(package.name)
             .version(package.version)
@@ -49,6 +49,6 @@ Generate tags based on a config file
 
         let config_file = Path::new(matches.value_of("config-file").unwrap()).to_owned();
 
-        Config { config_file }
+        Args { config_file }
     }
 }
