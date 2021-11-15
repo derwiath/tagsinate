@@ -10,6 +10,8 @@ pub struct Job {
     pub recurse: bool,
     pub languages: Option<String>,
     pub extras: Option<String>,
+    pub exclude: Option<String>,
+    pub exclude_exception: Option<String>,
 }
 
 #[derive(Debug)]
@@ -52,6 +54,16 @@ pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, ()> {
         Some(s) => s.as_str(),
         None => "",
     };
+    let exclude = config_data.exclude;
+    let exclude_str = match &exclude {
+        Some(s) => s.as_str(),
+        None => "",
+    };
+    let exclude_exception = config_data.exclude_exception;
+    let exclude_exception_str = match &exclude_exception {
+        Some(s) => s.as_str(),
+        None => "",
+    };
 
     let mut jobs =
         Vec::<Job>::with_capacity(config_data.paths.len() + config_data.override_paths.len());
@@ -61,6 +73,8 @@ pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, ()> {
             recurse,
             languages: languages.clone(),
             extras: extras.clone(),
+            exclude: exclude.clone(),
+            exclude_exception: exclude_exception.clone(),
         });
     }
 
@@ -78,6 +92,19 @@ pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, ()> {
                 }
                 None => languages.clone(),
             },
+            exclude: match override_path.exclude {
+                Some(override_exclude) => {
+                    Some(override_exclude.replace("${exclude}", &exclude_str))
+                }
+                None => exclude.clone(),
+            },
+            exclude_exception: match override_path.exclude_exception {
+                Some(override_exclude_exception) => Some(
+                    override_exclude_exception
+                        .replace("${excludeException}", &exclude_exception_str),
+                ),
+                None => exclude_exception.clone(),
+            },
         });
     }
 
@@ -89,10 +116,13 @@ pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, ()> {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 struct OverridePathData {
     path: PathBuf,
     languages: Option<String>,
     extras: Option<String>,
+    exclude: Option<String>,
+    exclude_exception: Option<String>,
 
     #[serde(deserialize_with = "option_bool_from_string", default)]
     recurse: Option<bool>,
@@ -105,6 +135,8 @@ struct ConfigData {
     output_file: Option<PathBuf>,
     languages: Option<String>,
     extras: Option<String>,
+    exclude: Option<String>,
+    exclude_exception: Option<String>,
 
     #[serde(deserialize_with = "bool_from_string", default)]
     recurse: bool,

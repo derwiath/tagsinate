@@ -80,6 +80,15 @@ fn run_ctags<S: AsRef<OsStr> + fmt::Debug>(
     if job.recurse {
         args.push(OsString::from("--recurse"));
     }
+    if let Some(exclude) = &job.exclude {
+        args.push(OsString::from(format!("--exclude={}", exclude)));
+    }
+    if let Some(exclude_exception) = &job.exclude_exception {
+        args.push(OsString::from(format!(
+            "--exclude_exception={}",
+            exclude_exception
+        )));
+    }
     args.push(OsString::from(&job.path));
 
     println!("{:?} {:?}", binary, args);
