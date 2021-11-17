@@ -10,20 +10,24 @@ extern crate clap;
 mod args;
 mod config;
 
-fn find_config_file(config_filename: &Path) -> io::Result<PathBuf> {
-    if config_filename.is_file() {
-        return Ok(config_filename.to_owned());
-    }
-    let mut directory = env::current_dir()?;
-    loop {
-        let candidate = directory.join(&config_filename);
+fn find_file_in_ancestors(basename: &Path) -> io::Result<(PathBuf, usize)> {
+    let cwd = env::current_dir()?;
+    for (ancestor_count, directory) in cwd.ancestors().enumerate() {
+        let candidate = directory.join(&basename);
         if candidate.is_file() {
-            return Ok(candidate);
+            return Ok((candidate, ancestor_count));
         }
+    }
+    return Err(io::Error::from(io::ErrorKind::NotFound));
+}
 
-        if !directory.pop() {
-            return Err(io::Error::from(io::ErrorKind::NotFound));
-        }
+fn find_config_file(config_filename: &Path) -> io::Result<(PathBuf, usize)> {
+    if config_filename.is_file() {
+        return Ok((config_filename.to_owned(), 0));
+    } else if config_filename.is_absolute() {
+        return Err(io::Error::from(io::ErrorKind::NotFound));
+    } else {
+        return find_file_in_ancestors(config_filename);
     }
 }
 
@@ -71,17 +75,29 @@ fn run_ctags<S: AsRef<OsStr> + fmt::Debug>(
 fn main() -> Result<(), Box<dyn Error>> {
     let args = args::parse();
     print!("Finding {} ... ", args.config_file.display());
-    let config_file: PathBuf = match find_config_file(&args.config_file) {
-        Ok(config_file) => {
+    let (config_file, ancestor_count) = match find_config_file(&args.config_file) {
+        Ok((config_file, ancestor_count)) => {
             println!("[ok]");
-            config_file
+            (config_file, ancestor_count)
         }
         Err(e) => {
             println!("[fail]");
             return Err(Box::new(e));
         }
     };
-    print!("Parsing {} ... ", config_file.display());
+    print!("Parsing {} ... ", {
+        if args.config_file.is_absolute() {
+            config_file.clone()
+        } else {
+            let mut p = PathBuf::new();
+            for _ in 0..ancestor_count {
+                p.push("..");
+            }
+            p.push(&args.config_file);
+            p.clone()
+        }
+        .display()
+    });
     let config = match config::parse(&config_file) {
         Ok(config) => {
             println!("[ok]");
