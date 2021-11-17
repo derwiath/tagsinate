@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::ffi::{OsStr, OsString};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -8,39 +9,6 @@ extern crate clap;
 
 mod args;
 mod config;
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum ErrorKind {
-    ConfigFileNotFound,
-    FailedToParseConfigFile,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Error {
-    kind: ErrorKind,
-}
-
-impl Error {
-    pub fn new(kind: ErrorKind) -> Error {
-        Error { kind }
-    }
-
-    pub fn kind(self) -> ErrorKind {
-        self.kind
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.kind)
-    }
-}
-
-impl fmt::Display for ErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
 
 fn find_config_file(config_filename: &Path) -> io::Result<PathBuf> {
     if config_filename.is_file() {
@@ -100,22 +68,28 @@ fn run_ctags<S: AsRef<OsStr> + fmt::Debug>(
     io::stderr().write_all(&output.stderr).unwrap();
 }
 
-fn main() -> Result<(), Error> {
+fn main() -> Result<(), Box<dyn Error>> {
     let args = args::parse();
+    print!("Finding {} ... ", args.config_file.display());
     let config_file: PathBuf = match find_config_file(&args.config_file) {
-        Ok(config_file) => config_file,
-        Err(_) => {
-            eprintln!("Failed to find config file {}", args.config_file.display());
-            return Err(Error::new(ErrorKind::ConfigFileNotFound));
+        Ok(config_file) => {
+            println!("[ok]");
+            config_file
+        }
+        Err(e) => {
+            println!("[fail]");
+            return Err(Box::new(e));
         }
     };
-    println!("Using {}", config_file.display());
-
+    print!("Parsing {} ... ", config_file.display());
     let config = match config::parse(&config_file) {
-        Ok(config) => config,
-        Err(_) => {
-            eprintln!("Failed to parse config file {}", config_file.display());
-            return Err(Error::new(ErrorKind::FailedToParseConfigFile));
+        Ok(config) => {
+            println!("[ok]");
+            config
+        }
+        Err(e) => {
+            println!("[fail]");
+            return Err(e);
         }
     };
 

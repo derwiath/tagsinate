@@ -1,5 +1,6 @@
 use serde::{de, Deserialize, Deserializer};
 use serde_json;
+use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::{fs, io};
@@ -21,25 +22,11 @@ pub struct Config {
     pub jobs: Vec<Job>,
 }
 
-pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, ()> {
+pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, Box<dyn Error>> {
     // Open the file in read-only mode with buffer.
-    let file = match fs::File::open(path) {
-        Ok(file) => file,
-        Err(e) => {
-            eprintln!("{}", e);
-            return Err(());
-        }
-    };
+    let file = fs::File::open(path)?;
     let reader = io::BufReader::new(file);
-
-    // Read the JSON contents of the file as an instance of `User`.
-    let config_data: ConfigData = match serde_json::from_reader(reader) {
-        Ok(config) => config,
-        Err(e) => {
-            eprintln!("{}", e);
-            return Err(());
-        }
-    };
+    let config_data: ConfigData = serde_json::from_reader(reader)?;
 
     let binary = config_data.binary;
     let recurse = config_data.recurse;
