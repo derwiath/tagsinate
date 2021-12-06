@@ -52,6 +52,13 @@ fn run_ctags<S: AsRef<OsStr> + fmt::Debug>(
     if job.recurse {
         args.push(OsString::from("--recurse"));
     }
+    for (symbol, definition) in &job.defines {
+        if let Some(definition) = definition {
+            args.push(OsString::from(format!("-D{}='{}'", symbol, definition)));
+        } else {
+            args.push(OsString::from(format!("-D{}", symbol)));
+        }
+    }
     if let Some(exclude) = &job.exclude {
         args.push(OsString::from(format!("--exclude={}", exclude)));
     }

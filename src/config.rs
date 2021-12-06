@@ -13,6 +13,7 @@ pub struct Job {
     pub extras: Option<String>,
     pub exclude: Option<String>,
     pub exclude_exception: Option<String>,
+    pub defines: Vec<(String, Option<String>)>,
 }
 
 #[derive(Debug)]
@@ -52,6 +53,12 @@ pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, Box<dyn Error>> {
         None => "",
     };
 
+    let defines: Vec<(String, Option<String>)> = config_data
+        .defines
+        .iter()
+        .map(|define| (define.symbol.clone(), define.definition.clone()))
+        .collect();
+
     let mut jobs =
         Vec::<Job>::with_capacity(config_data.paths.len() + config_data.override_paths.len());
     for path in config_data.paths {
@@ -62,6 +69,7 @@ pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, Box<dyn Error>> {
             extras: extras.clone(),
             exclude: exclude.clone(),
             exclude_exception: exclude_exception.clone(),
+            defines: defines.clone(),
         });
     }
 
@@ -92,6 +100,7 @@ pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, Box<dyn Error>> {
                 ),
                 None => exclude_exception.clone(),
             },
+            defines: defines.clone(),
         });
     }
 
@@ -117,6 +126,13 @@ struct OverridePathData {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+struct DefineData {
+    symbol: String,
+    definition: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 struct ConfigData {
     binary: PathBuf,
     output_file: Option<PathBuf>,
@@ -127,6 +143,8 @@ struct ConfigData {
 
     #[serde(deserialize_with = "bool_from_string", default)]
     recurse: bool,
+
+    defines: Vec<DefineData>,
 
     paths: Vec<PathBuf>,
     override_paths: Vec<OverridePathData>,
