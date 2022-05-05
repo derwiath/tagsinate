@@ -31,9 +31,10 @@ fn find_config_file(config_filename: &Path) -> io::Result<(PathBuf, usize)> {
     }
 }
 
-fn run_ctags<S: AsRef<OsStr> + fmt::Debug>(
+fn run_ctags<S: AsRef<OsStr> + fmt::Debug, P: AsRef<Path>>(
     binary: &S,
     output_file: &S,
+    current_working_dir: P,
     append: bool,
     job: &config::Job,
 ) {
@@ -73,6 +74,7 @@ fn run_ctags<S: AsRef<OsStr> + fmt::Debug>(
     println!("{:?} {:?}", binary, args);
     let output = Command::new(binary)
         .args(args)
+        .current_dir(current_working_dir)
         .output()
         .expect("ctags failed to start");
     io::stdout().write_all(&output.stdout).unwrap();
@@ -116,9 +118,24 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
+    let config_file_dir = config_file
+        .parent()
+        .expect("Failed to get parent directory of config file");
+
+    println!(
+        "Setting current working directory to {}",
+        config_file_dir.display()
+    );
+
     for (i, job) in config.jobs.iter().enumerate() {
         let append = if i > 0 { true } else { false };
-        run_ctags(&config.binary, &config.output_file, append, job);
+        run_ctags(
+            &config.binary,
+            &config.output_file,
+            &config_file_dir,
+            append,
+            job,
+        );
     }
 
     return Ok(());
