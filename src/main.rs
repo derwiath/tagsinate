@@ -118,9 +118,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
-    let config_file_dir = config_file
+    let config_file_parent = config_file
         .parent()
         .expect("Failed to get parent directory of config file");
+
+    let config_file_dir: PathBuf = if !config_file_parent.as_os_str().is_empty() {
+        config_file_parent.to_path_buf()
+    } else {
+        env::current_dir()?
+    };
 
     println!(
         "Setting current working directory to {}",
