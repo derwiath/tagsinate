@@ -82,15 +82,18 @@ fn run_ctags<S: AsRef<OsStr> + fmt::Debug, P: AsRef<Path>>(
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
+    let ok = "[ok]";
+    let fail = "[fail]";
+
     let args = args::parse();
     print!("Finding {} ... ", args.config_file.display());
     let (config_file, ancestor_count) = match find_config_file(&args.config_file) {
         Ok((config_file, ancestor_count)) => {
-            println!("[ok]");
+            println!("{}", &ok);
             (config_file, ancestor_count)
         }
         Err(e) => {
-            println!("[fail]");
+            println!("{}", &fail);
             return Err(Box::new(e));
         }
     };
@@ -109,11 +112,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     });
     let config = match config::parse(&config_file) {
         Ok(config) => {
-            println!("[ok]");
+            println!("{}", &ok);
             config
         }
         Err(e) => {
-            println!("[fail]");
+            println!("{}", &fail);
             return Err(e);
         }
     };
