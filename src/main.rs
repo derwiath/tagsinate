@@ -1,3 +1,4 @@
+use colored::*;
 use std::error::Error;
 use std::ffi::{OsStr, OsString};
 use std::io::{self, Write};
@@ -6,6 +7,7 @@ use std::process::Command;
 use std::{env, fmt};
 
 extern crate clap;
+extern crate colored;
 
 mod args;
 mod config;
@@ -82,8 +84,8 @@ fn run_ctags<S: AsRef<OsStr> + fmt::Debug, P: AsRef<Path>>(
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let ok = "[ok]";
-    let fail = "[fail]";
+    let ok = "[ok]".green();
+    let fail = "[fail]".red();
 
     let args = args::parse();
     print!("Finding {} ... ", args.config_file.display());
