@@ -33,10 +33,9 @@ fn find_config_file(config_filename: &Path) -> io::Result<(PathBuf, usize)> {
     }
 }
 
-fn run_ctags<S: AsRef<OsStr> + fmt::Debug, P: AsRef<Path>>(
+fn run_ctags<S: AsRef<OsStr> + fmt::Debug>(
     binary: &S,
     output_file: &S,
-    current_working_dir: P,
     append: bool,
     job: &config::Job,
 ) {
@@ -76,7 +75,6 @@ fn run_ctags<S: AsRef<OsStr> + fmt::Debug, P: AsRef<Path>>(
     println!("{:?} {:?}", binary, args);
     let output = Command::new(binary)
         .args(args)
-        .current_dir(current_working_dir)
         .output()
         .expect("ctags failed to start");
     io::stdout().write_all(&output.stdout).unwrap();
@@ -133,20 +131,23 @@ fn main() -> Result<(), Box<dyn Error>> {
         env::current_dir()?
     };
 
-    println!(
-        "Setting current working directory to {}",
+    print!(
+        "Setting current working directory to {} ... ",
         config_file_dir.display()
     );
+    match env::set_current_dir(&config_file_dir) {
+        Ok(()) => {
+            println!("{}", &ok);
+        }
+        Err(e) => {
+            println!("{}", &fail);
+            return Err(Box::new(e));
+        }
+    };
 
     for (i, job) in config.jobs.iter().enumerate() {
         let append = if i > 0 { true } else { false };
-        run_ctags(
-            &config.binary,
-            &config.output_file,
-            &config_file_dir,
-            append,
-            job,
-        );
+        run_ctags(&config.binary, &config.output_file, append, job);
     }
 
     return Ok(());
