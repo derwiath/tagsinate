@@ -4,7 +4,7 @@ use std::ffi::{OsStr, OsString};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::{env, fmt};
+use std::{env, fmt, fs};
 
 extern crate clap;
 extern crate colored;
@@ -145,10 +145,63 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
+    let temp_output_file = {
+        let mut output_file = config.output_file.clone();
+        output_file.set_extension("tagsinate");
+        output_file
+    };
+    if temp_output_file.exists() {
+        print!(
+            "Removing temporary tags file {} ...",
+            temp_output_file.display()
+        );
+        match fs::remove_file(&temp_output_file) {
+            Ok(()) => {
+                println!("{}", &ok);
+            }
+            Err(e) => {
+                println!("{}", &fail);
+                return Err(Box::new(e));
+            }
+        };
+    }
+
+    println!("Generating tags into {}", temp_output_file.display());
     for (i, job) in config.jobs.iter().enumerate() {
         let append = if i > 0 { true } else { false };
-        run_ctags(&config.binary, &config.output_file, append, job);
+        run_ctags(&config.binary, &temp_output_file, append, job);
     }
+
+    if config.output_file.exists() {
+        print!(
+            "Removing output tags file {} ...",
+            config.output_file.display()
+        );
+        match fs::remove_file(&config.output_file) {
+            Ok(()) => {
+                println!("{}", &ok);
+            }
+            Err(e) => {
+                println!("{}", &fail);
+                return Err(Box::new(e));
+            }
+        };
+    }
+
+    print!(
+        "Renaming temporaty output tags file {} into {}...",
+        temp_output_file.display(),
+        config.output_file.display()
+    );
+    match fs::rename(&temp_output_file, &config.output_file) {
+        Ok(()) => {
+            println!("{}", &ok);
+        }
+        Err(e) => {
+            println!("{}", &fail);
+            return Err(Box::new(e));
+        }
+    };
 
     return Ok(());
 }
