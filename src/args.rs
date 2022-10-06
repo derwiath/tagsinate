@@ -1,5 +1,5 @@
-use clap::{App, Arg};
-use std::path::{Path, PathBuf};
+use clap::{arg, command, value_parser};
+use std::path::PathBuf;
 
 pub struct Args {
     pub config_file: PathBuf,
@@ -9,46 +9,21 @@ pub fn parse() -> Args {
     Args::new()
 }
 
-struct CargoPackage {
-    name: &'static str,
-    version: &'static str,
-    authors: Vec<&'static str>,
-}
-
-impl CargoPackage {
-    fn new() -> CargoPackage {
-        CargoPackage {
-            version: env!("CARGO_PKG_VERSION"),
-            name: env!("CARGO_PKG_NAME"),
-            authors: env!("CARGO_PKG_AUTHORS").split(':').collect(),
-        }
-    }
-}
-
 impl Args {
     fn new() -> Args {
-        let package = CargoPackage::new();
-        let matches = App::new(package.name)
-            .version(package.version)
-            .author(package.authors[0])
-            .about(
-                "
-Generate tags based on a config file
-                ",
-            )
+        let matches = command!()
             .arg(
-                Arg::with_name("config-file")
-                    .short("c")
-                    .long("config-file")
-                    .takes_value(true)
-                    .default_value(".tagsinate-config.json")
-                    .help("")
-                    .value_name("FILENAME"),
+                arg!(
+                    -c --config <FILE> "Name of tagsinate config file"
+                )
+                .required(false)
+                .value_parser(value_parser!(PathBuf))
+                .default_value(".tagsinate-config.json"),
             )
             .get_matches();
-
-        let config_file = Path::new(matches.value_of("config-file").unwrap()).to_owned();
-
-        Args { config_file }
+        let config_file = matches.get_one::<PathBuf>("config").unwrap();
+        Args {
+            config_file: config_file.clone(),
+        }
     }
 }
