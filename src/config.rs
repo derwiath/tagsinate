@@ -1,5 +1,4 @@
 use serde::{de, Deserialize, Deserializer};
-use serde_json;
 use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -78,25 +77,23 @@ pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, Box<dyn Error>> {
             path: override_path.path,
             recurse: override_path.recurse.unwrap_or(recurse),
             extras: match override_path.extras {
-                Some(override_extras) => Some(override_extras.replace("${extras}", &extras_str)),
+                Some(override_extras) => Some(override_extras.replace("${extras}", extras_str)),
                 None => extras.clone(),
             },
             languages: match override_path.languages {
                 Some(override_languages) => {
-                    Some(override_languages.replace("${languages}", &languages_str))
+                    Some(override_languages.replace("${languages}", languages_str))
                 }
                 None => languages.clone(),
             },
             exclude: match override_path.exclude {
-                Some(override_exclude) => {
-                    Some(override_exclude.replace("${exclude}", &exclude_str))
-                }
+                Some(override_exclude) => Some(override_exclude.replace("${exclude}", exclude_str)),
                 None => exclude.clone(),
             },
             exclude_exception: match override_path.exclude_exception {
                 Some(override_exclude_exception) => Some(
                     override_exclude_exception
-                        .replace("${excludeException}", &exclude_exception_str),
+                        .replace("${excludeException}", exclude_exception_str),
                 ),
                 None => exclude_exception.clone(),
             },

@@ -15,21 +15,21 @@ mod config;
 fn find_file_in_ancestors(basename: &Path) -> io::Result<(PathBuf, usize)> {
     let cwd = env::current_dir()?;
     for (ancestor_count, directory) in cwd.ancestors().enumerate() {
-        let candidate = directory.join(&basename);
+        let candidate = directory.join(basename);
         if candidate.is_file() {
             return Ok((candidate, ancestor_count));
         }
     }
-    return Err(io::Error::from(io::ErrorKind::NotFound));
+    Err(io::Error::from(io::ErrorKind::NotFound))
 }
 
 fn find_config_file(config_filename: &Path) -> io::Result<(PathBuf, usize)> {
     if config_filename.is_file() {
-        return Ok((config_filename.to_owned(), 0));
+        Ok((config_filename.to_owned(), 0))
     } else if config_filename.is_absolute() {
-        return Err(io::Error::from(io::ErrorKind::NotFound));
+        Err(io::Error::from(io::ErrorKind::NotFound))
     } else {
-        return find_file_in_ancestors(config_filename);
+        find_file_in_ancestors(config_filename)
     }
 }
 
@@ -168,7 +168,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     println!("Generating tags into {}", temp_output_file.display());
     for (i, job) in config.jobs.iter().enumerate() {
-        let append = if i > 0 { true } else { false };
+        let append = i > 0;
         run_ctags(&config.binary, &temp_output_file, append, job);
     }
 
@@ -203,5 +203,5 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
-    return Ok(());
+    Ok(())
 }
