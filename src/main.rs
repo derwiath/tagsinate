@@ -38,6 +38,7 @@ fn run_ctags<S: AsRef<OsStr> + fmt::Debug>(
     output_file: &S,
     append: bool,
     job: &config::Job,
+    pretend: bool,
 ) {
     let mut args: Vec<OsString> = Vec::new();
     args.push(OsString::from("-o"));
@@ -76,6 +77,9 @@ fn run_ctags<S: AsRef<OsStr> + fmt::Debug>(
     args.push(OsString::from(&job.path));
 
     println!("{:?} {:?}", binary, args);
+    if pretend {
+        return;
+    }
     let output = Command::new(binary)
         .args(args)
         .output()
@@ -153,7 +157,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         output_file.set_extension("tagsinate");
         output_file
     };
-    if temp_output_file.exists() {
+    if !args.pretend && temp_output_file.exists() {
         print!(
             "Removing temporary tags file {} ...",
             temp_output_file.display()
@@ -172,39 +176,42 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("Generating tags into {}", temp_output_file.display());
     for (i, job) in config.jobs.iter().enumerate() {
         let append = i > 0;
-        run_ctags(&config.binary, &temp_output_file, append, job);
+        run_ctags(&config.binary, &temp_output_file, append, job, args.pretend);
     }
 
-    if config.output_file.exists() {
-        print!(
-            "Removing output tags file {} ...",
-            config.output_file.display()
-        );
-        match fs::remove_file(&config.output_file) {
-            Ok(()) => {
-                println!("{}", &ok);
-            }
-            Err(e) => {
-                println!("{}", &fail);
-                return Err(Box::new(e));
-            }
-        };
+    if !args.pretend {
+        if config.output_file.exists() {
+            print!(
+                "Removing output tags file {} ...",
+                config.output_file.display()
+            );
+            match fs::remove_file(&config.output_file) {
+                Ok(()) => {
+                    println!("{}", &ok);
+                }
+                Err(e) => {
+                    println!("{}", &fail);
+                    return Err(Box::new(e));
+                }
+            };
+        }
+        if temp_output_file.exists() {
+            print!(
+                "Renaming temporaty output tags file {} into {}...",
+                temp_output_file.display(),
+                config.output_file.display()
+            );
+            match fs::rename(&temp_output_file, &config.output_file) {
+                Ok(()) => {
+                    println!("{}", &ok);
+                }
+                Err(e) => {
+                    println!("{}", &fail);
+                    return Err(Box::new(e));
+                }
+            };
+        }
     }
-
-    print!(
-        "Renaming temporaty output tags file {} into {}...",
-        temp_output_file.display(),
-        config.output_file.display()
-    );
-    match fs::rename(&temp_output_file, &config.output_file) {
-        Ok(()) => {
-            println!("{}", &ok);
-        }
-        Err(e) => {
-            println!("{}", &fail);
-            return Err(Box::new(e));
-        }
-    };
 
     Ok(())
 }
