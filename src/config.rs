@@ -9,6 +9,7 @@ pub struct Job {
     pub path: PathBuf,
     pub recurse: bool,
     pub languages: Option<String>,
+    pub language_maps: Option<String>,
     pub extras: Option<String>,
     pub exclude: Option<String>,
     pub exclude_exception: Option<String>,
@@ -20,6 +21,18 @@ pub struct Config {
     pub binary: PathBuf,
     pub output_file: PathBuf,
     pub jobs: Vec<Job>,
+}
+fn get_language_map_string(language_maps: &[LanguageMapData]) -> String {
+    language_maps
+        .iter()
+        .map(|lang_map| format!("{}:{}", lang_map.language.display(), lang_map.extensions))
+        .fold("".to_string(), |acc, lang_map| {
+            if acc.is_empty() {
+                lang_map
+            } else {
+                format!("{acc},{lang_map}")
+            }
+        })
 }
 
 pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, Box<dyn Error>> {
@@ -35,6 +48,10 @@ pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, Box<dyn Error>> {
     let extras_str = extras.as_ref().map_or("", |s| s.as_str());
     let languages = config_data.languages;
     let languages_str = languages.as_ref().map_or("", |s| s.as_str());
+    let language_maps = config_data
+        .language_maps
+        .map(|maps| get_language_map_string(&maps));
+    let language_maps_str = language_maps.as_ref().map_or("", |s| s.as_str());
     let exclude = config_data.exclude;
     let exclude_str = exclude.as_ref().map_or("", |s| s.as_str());
     let exclude_exception = config_data.exclude_exception;
@@ -53,6 +70,7 @@ pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, Box<dyn Error>> {
             path,
             recurse,
             languages: languages.clone(),
+            language_maps: language_maps.clone(),
             extras: extras.clone(),
             exclude: exclude.clone(),
             exclude_exception: exclude_exception.clone(),
@@ -73,6 +91,13 @@ pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, Box<dyn Error>> {
                     Some(override_languages.replace("${languages}", languages_str))
                 }
                 None => languages.clone(),
+            },
+            language_maps: match override_path.language_maps {
+                Some(override_language_maps) => {
+                    let override_language_maps = get_language_map_string(&override_language_maps);
+                    Some(override_language_maps.replace("${language_maps}", language_maps_str))
+                }
+                None => language_maps.clone(),
             },
             exclude: match override_path.exclude {
                 Some(override_exclude) => Some(override_exclude.replace("${exclude}", exclude_str)),
@@ -98,9 +123,17 @@ pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, Box<dyn Error>> {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+struct LanguageMapData {
+    language: PathBuf,
+    extensions: String,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 struct OverridePathData {
     path: PathBuf,
     languages: Option<String>,
+    language_maps: Option<Vec<LanguageMapData>>,
     extras: Option<String>,
     exclude: Option<String>,
     exclude_exception: Option<String>,
@@ -122,6 +155,7 @@ struct ConfigData {
     binary: PathBuf,
     output_file: Option<PathBuf>,
     languages: Option<String>,
+    language_maps: Option<Vec<LanguageMapData>>,
     extras: Option<String>,
     exclude: Option<String>,
     exclude_exception: Option<String>,

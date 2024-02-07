@@ -45,6 +45,9 @@ fn run_ctags<S: AsRef<OsStr> + fmt::Debug>(
     if let Some(languages) = &job.languages {
         args.push(OsString::from(format!("--languages={}", languages)));
     }
+    if let Some(language_maps) = &job.language_maps {
+        args.push(OsString::from(format!("--langmap={}", language_maps)));
+    }
     if let Some(extras) = &job.extras {
         args.push(OsString::from(format!("--extras={}", extras)));
     }
