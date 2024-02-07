@@ -95,7 +95,7 @@ pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, Box<dyn Error>> {
             language_maps: match override_path.language_maps {
                 Some(override_language_maps) => {
                     let override_language_maps = get_language_map_string(&override_language_maps);
-                    Some(override_language_maps.replace("${language_maps}", language_maps_str))
+                    Some(override_language_maps.replace("${languageMaps}", language_maps_str))
                 }
                 None => language_maps.clone(),
             },
