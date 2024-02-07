@@ -48,10 +48,9 @@ pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, Box<dyn Error>> {
     let extras_str = extras.as_ref().map_or("", |s| s.as_str());
     let languages = config_data.languages;
     let languages_str = languages.as_ref().map_or("", |s| s.as_str());
-    let language_maps = config_data
+    let language_maps_string = config_data
         .language_maps
         .map(|maps| get_language_map_string(&maps));
-    let language_maps_str = language_maps.as_ref().map_or("", |s| s.as_str());
     let exclude = config_data.exclude;
     let exclude_str = exclude.as_ref().map_or("", |s| s.as_str());
     let exclude_exception = config_data.exclude_exception;
@@ -70,7 +69,7 @@ pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, Box<dyn Error>> {
             path,
             recurse,
             languages: languages.clone(),
-            language_maps: language_maps.clone(),
+            language_maps: language_maps_string.clone(),
             extras: extras.clone(),
             exclude: exclude.clone(),
             exclude_exception: exclude_exception.clone(),
@@ -78,38 +77,52 @@ pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, Box<dyn Error>> {
         });
     }
 
+    fn if_non_empty_then_some(s: String) -> Option<String> {
+        (!s.is_empty()).then_some(s)
+    }
+
     for override_path in config_data.override_paths {
+        let extras = override_path.extras.map_or_else(
+            || extras.clone(),
+            |override_extras| {
+                if_non_empty_then_some(override_extras.replace("${extras}", extras_str))
+            },
+        );
+        let languages = override_path.languages.map_or_else(
+            || languages.clone(),
+            |override_languages| {
+                if_non_empty_then_some(override_languages.replace("${languages}", languages_str))
+            },
+        );
+        let language_maps = override_path.language_maps.map_or_else(
+            || language_maps_string.clone(),
+            |override_language_maps| {
+                if_non_empty_then_some(get_language_map_string(&override_language_maps))
+            },
+        );
+        let exclude = override_path.exclude.map_or_else(
+            || exclude.clone(),
+            |override_exclude| {
+                if_non_empty_then_some(override_exclude.replace("${exclude}", exclude_str))
+            },
+        );
+        let exclude_exception = override_path.exclude_exception.map_or_else(
+            || exclude_exception.clone(),
+            |override_exclude_exception| {
+                if_non_empty_then_some(
+                    override_exclude_exception
+                        .replace("${excludeException}", exclude_exception_str),
+                )
+            },
+        );
         jobs.push(Job {
             path: override_path.path,
             recurse: override_path.recurse.unwrap_or(recurse),
-            extras: match override_path.extras {
-                Some(override_extras) => Some(override_extras.replace("${extras}", extras_str)),
-                None => extras.clone(),
-            },
-            languages: match override_path.languages {
-                Some(override_languages) => {
-                    Some(override_languages.replace("${languages}", languages_str))
-                }
-                None => languages.clone(),
-            },
-            language_maps: match override_path.language_maps {
-                Some(override_language_maps) => {
-                    let override_language_maps = get_language_map_string(&override_language_maps);
-                    Some(override_language_maps.replace("${languageMaps}", language_maps_str))
-                }
-                None => language_maps.clone(),
-            },
-            exclude: match override_path.exclude {
-                Some(override_exclude) => Some(override_exclude.replace("${exclude}", exclude_str)),
-                None => exclude.clone(),
-            },
-            exclude_exception: match override_path.exclude_exception {
-                Some(override_exclude_exception) => Some(
-                    override_exclude_exception
-                        .replace("${excludeException}", exclude_exception_str),
-                ),
-                None => exclude_exception.clone(),
-            },
+            extras,
+            languages,
+            language_maps,
+            exclude,
+            exclude_exception,
             defines: defines.clone(),
         });
     }
