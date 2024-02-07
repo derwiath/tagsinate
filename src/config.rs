@@ -32,25 +32,13 @@ pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config, Box<dyn Error>> {
     let recurse = config_data.recurse;
     let output_file = config_data.output_file.unwrap_or("tags".into());
     let extras = config_data.extras;
-    let extras_str = match &extras {
-        Some(s) => s.as_str(),
-        None => "",
-    };
+    let extras_str = extras.as_ref().map_or("", |s| s.as_str());
     let languages = config_data.languages;
-    let languages_str = match &languages {
-        Some(s) => s.as_str(),
-        None => "",
-    };
+    let languages_str = languages.as_ref().map_or("", |s| s.as_str());
     let exclude = config_data.exclude;
-    let exclude_str = match &exclude {
-        Some(s) => s.as_str(),
-        None => "",
-    };
+    let exclude_str = exclude.as_ref().map_or("", |s| s.as_str());
     let exclude_exception = config_data.exclude_exception;
-    let exclude_exception_str = match &exclude_exception {
-        Some(s) => s.as_str(),
-        None => "",
-    };
+    let exclude_exception_str = exclude_exception.as_ref().map_or("", |s| s.as_str());
 
     let defines: Vec<(String, Option<String>)> = config_data
         .defines
