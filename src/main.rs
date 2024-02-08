@@ -76,7 +76,16 @@ fn run_ctags<S: AsRef<OsStr> + fmt::Debug>(
     }
     args.push(OsString::from(&job.path));
 
-    println!("{:?} {:?}", binary, args);
+    print!("{}", binary.as_ref().to_str().unwrap());
+    for arg in &args {
+        let arg: &str = arg.to_str().unwrap();
+        if arg.contains(' ') {
+            print!(" \"{arg}\"");
+        } else {
+            print!(" {arg}");
+        }
+    }
+    println!();
     if pretend {
         return;
     }
