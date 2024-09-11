@@ -60,7 +60,8 @@ fn run_ctags<S: AsRef<OsStr> + fmt::Debug>(
     }
     for (symbol, definition) in &job.defines {
         if let Some(definition) = definition {
-            args.push(OsString::from(format!("-D{}='{}'", symbol, definition)));
+            args.push(OsString::from("-D"));
+            args.push(OsString::from(format!("{}={}", symbol, definition)));
         } else {
             args.push(OsString::from(format!("-D{}", symbol)));
         }
